@@ -1,17 +1,6 @@
 """Translate subfolders and files of input folder path.
 As a result next to supplied folder will be created a new one with translation.
 
-Known issues:
-    When the source language is 'auto' and destination is not 'en'
-    text of mixed languages not always gives expected results:
-        translated as expected:
-            'Text in English и русском' -> en -> 'Text in Russian and English'
-        translated as expected:
-            '中文文本 and in English' -> en -> 'Chinese text and in English'
-        not translated at all:
-            'Text in English и русском' -> ru -> 'Text in English и русском'
-    Solution: Predefine the source language, don't use auto.
-
 TODO:
     Copy already renamed paths. Not like now: first copy, then rename.
     Add checking if text that was sent to translator
@@ -25,12 +14,13 @@ TODO:
 import os
 import sys
 import shutil
-import googletrans
+import requests
 from halo import Halo
 from pathlib import Path
 from pprint import pprint
 import pyinputplus as pyip
 from pathvalidate import is_valid_filename, sanitize_filename
+from translatepy.translators.google import GoogleTranslate
 
 
 def print_path_tree(top: os.PathLike):
@@ -95,6 +85,32 @@ def pack_names_text(names_texts: dict):
     return utexts_and_keys
 
 
+def assure_online(url: str):
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.status_code
+
+
+def google_translator(texts: list, dest_lang: str):
+    """Translate list of texts using Google Translate.
+    Return TranslationResult Class"""
+    SERVER_URL = 'translate.google.com'
+    CLEAN_TRANSLATION_CASHE = True
+
+    assure_online(f'http://{SERVER_URL}')
+
+    g_translate = GoogleTranslate(service_url=SERVER_URL)
+    translation_results = []
+
+    for text in texts:
+        translation = g_translate.translate(text, dest_lang)
+        translation_results.append(translation)
+
+    if CLEAN_TRANSLATION_CASHE is True:
+        g_translate.clean_cache()
+    return translation_results
+
+
 def unpack_names_text(translated_list: list, utexts_and_keys: list):
     """Unpack translated text.
     Receive the list of translated texts and list of keys for these texts
@@ -122,13 +138,13 @@ def show_translation_as(translated_texts: list, show_as: str = None):
     results = []
     for translation in translated_texts:
         if show_as == 'rename':
-            result_text = translation.text
+            result_text = translation.result
         elif show_as == 'prefix':
-            result_text = f'{translation.text} [{translation.origin}]'
+            result_text = f'{translation.result} [{translation.source}]'
         elif show_as == 'suffix':
-            result_text = f'{translation.origin} [{translation.text}]'
+            result_text = f'{translation.source} [{translation.result}]'
         else:
-            result_text = translation.text
+            result_text = translation.result
         results.append(result_text)
     return results
 
@@ -229,8 +245,8 @@ spinner = Halo(text='translating', spinner=spin_dots)
 spinner.start()
 
 # translating
-translation = googletrans.Translator()
-translation_results = translation.translate(unique_texts, dest_lang)
+translation_results = google_translator(unique_texts, dest_lang)
+
 spinner.stop()
 print('\n')
 
