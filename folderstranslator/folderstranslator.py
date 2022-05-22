@@ -94,12 +94,12 @@ def assure_online(url: str):
 def google_translator(texts: list, dest_lang: str):
     """Translate list of texts using Google Translate.
     Return TranslationResult Class"""
-    SERVER_URL = 'translate.google.com'
+    SERVER_NAME = 'translate.google.com'
     CLEAN_TRANSLATION_CACHE = False
 
-    assure_online(f'http://{SERVER_URL}')
+    assure_online(f'http://{SERVER_NAME}')
 
-    g_translate = GoogleTranslate(service_url=SERVER_URL)
+    g_translate = GoogleTranslate(service_url=SERVER_NAME)
     translation_results = []
 
     for text in texts:
