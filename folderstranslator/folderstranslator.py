@@ -95,7 +95,7 @@ def google_translator(texts: list, dest_lang: str):
     """Translate list of texts using Google Translate.
     Return TranslationResult Class"""
     SERVER_URL = 'translate.google.com'
-    CLEAN_TRANSLATION_CASHE = True
+    CLEAN_TRANSLATION_CACHE = False
 
     assure_online(f'http://{SERVER_URL}')
 
@@ -106,7 +106,7 @@ def google_translator(texts: list, dest_lang: str):
         translation = g_translate.translate(text, dest_lang)
         translation_results.append(translation)
 
-    if CLEAN_TRANSLATION_CASHE is True:
+    if CLEAN_TRANSLATION_CACHE is True:
         g_translate.clean_cache()
     return translation_results
 
